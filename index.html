@@ -1,0 +1,670 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>Refrigeration Plant Checklist</title>
+<meta name="theme-color" content="#0d47a1">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Plant Checklist">
+<link rel="manifest" href="manifest.json">
+<script src="https://cdn.jsdelivr.net/npm/@emailjs/browser@4/dist/email.min.js"></script>
+<style>
+  :root {
+    --primary: #0d47a1;
+    --primary-light: #1976d2;
+    --success: #2e7d32;
+    --warning: #f57c00;
+    --danger: #c62828;
+    --bg: #f5f7fa;
+    --card: #ffffff;
+    --text: #212121;
+    --border: #e0e0e0;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    line-height: 1.5;
+    padding-bottom: 80px;
+  }
+  header {
+    background: linear-gradient(135deg, var(--primary), var(--primary-light));
+    color: white;
+    padding: 16px;
+    text-align: center;
+    position: sticky;
+    top: 0;
+    z-index: 100;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+  }
+  header h1 { font-size: 1.3rem; font-weight: 600; }
+  .container { max-width: 800px; margin: 0 auto; padding: 16px; }
+  .card {
+    background: var(--card);
+    border-radius: 12px;
+    padding: 16px;
+    margin-bottom: 16px;
+    box-shadow: 0 2px 6px rgba(0,0,0,0.08);
+  }
+  .form-group { margin-bottom: 14px; }
+  label { display: block; font-weight: 600; margin-bottom: 6px; font-size: 0.9rem; }
+  input, select, textarea {
+    width: 100%;
+    padding: 12px;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    font-size: 1rem;
+    background: white;
+  }
+  button {
+    background: var(--primary);
+    color: white;
+    border: none;
+    padding: 14px 20px;
+    border-radius: 8px;
+    font-size: 1rem;
+    font-weight: 600;
+    cursor: pointer;
+    width: 100%;
+    margin-top: 8px;
+  }
+  button.secondary { background: #546e7a; }
+  button.success { background: var(--success); }
+  button.warning { background: var(--warning); }
+  .checklist-section { margin-bottom: 20px; }
+  .section-title {
+    background: #e3f2fd;
+    padding: 10px 12px;
+    border-radius: 8px;
+    font-weight: 700;
+    margin-bottom: 10px;
+    color: var(--primary);
+  }
+  .item {
+    background: #fafafa;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 12px;
+    margin-bottom: 10px;
+  }
+  .item-header {
+    display: flex;
+    align-items: flex-start;
+    gap: 10px;
+  }
+  .item-header input[type="checkbox"] {
+    width: 22px;
+    height: 22px;
+    margin-top: 2px;
+    flex-shrink: 0;
+  }
+  .item-text { flex: 1; font-weight: 500; }
+  .status-btns {
+    display: flex;
+    gap: 6px;
+    margin-top: 8px;
+    flex-wrap: wrap;
+  }
+  .status-btn {
+    padding: 6px 12px;
+    font-size: 0.85rem;
+    border-radius: 6px;
+    border: 1px solid var(--border);
+    background: white;
+    cursor: pointer;
+  }
+  .status-btn.active.pass { background: #c8e6c9; border-color: var(--success); color: var(--success); }
+  .status-btn.active.fail { background: #ffcdd2; border-color: var(--danger); color: var(--danger); }
+  .status-btn.active.na { background: #fff3e0; border-color: var(--warning); color: var(--warning); }
+  .notes {
+    margin-top: 8px;
+    width: 100%;
+    min-height: 50px;
+    font-size: 0.9rem;
+  }
+  .summary {
+    background: #e8f5e9;
+    padding: 12px;
+    border-radius: 8px;
+    margin-bottom: 16px;
+    font-weight: 600;
+  }
+  .history-item {
+    padding: 12px;
+    border-bottom: 1px solid var(--border);
+    cursor: pointer;
+  }
+  .history-item:hover { background: #f0f0f0; }
+  .nav {
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    background: white;
+    display: flex;
+    border-top: 1px solid var(--border);
+    z-index: 100;
+  }
+  .nav button {
+    flex: 1;
+    margin: 0;
+    border-radius: 0;
+    padding: 14px;
+    background: white;
+    color: var(--primary);
+    border: none;
+    font-size: 0.85rem;
+  }
+  .nav button.active { background: #e3f2fd; font-weight: 700; }
+  .hidden { display: none; }
+  .progress-bar {
+    height: 8px;
+    background: #e0e0e0;
+    border-radius: 4px;
+    overflow: hidden;
+    margin: 8px 0;
+  }
+  .progress-fill { height: 100%; background: var(--success); transition: width 0.3s; }
+  @media print {
+    .nav, button, .status-btns { display: none !important; }
+    body { background: white; padding: 0; }
+    .item { break-inside: avoid; }
+  }
+</style>
+</head>
+<body>
+<header>
+  <h1>❄️ Refrigeration Plant Checklist</h1>
+  <p id="header-sub" style="font-size:0.85rem; opacity:0.9;">Annual & Quarterly Service</p>
+</header>
+
+<div class="container">
+  <!-- HOME / SETUP SCREEN -->
+  <div id="screen-setup" class="screen">
+    <div class="card">
+      <h2 style="margin-bottom:12px;">New Service Checklist</h2>
+      <div class="form-group">
+        <label>Machine / Plant Number</label>
+        <select id="machineNo">
+          <option value="">-- Select Machine --</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label>Date</label>
+        <input type="date" id="serviceDate">
+      </div>
+      <div class="form-group">
+        <label>Service Type</label>
+        <select id="serviceType">
+          <option value="Quarterly">Quarterly Service</option>
+          <option value="Annual">Annual Service</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label>Refrigerant / Plant Type</label>
+        <select id="refrigerant" onchange="updateMachines()">
+          <option value="R134A">R134A Plant</option>
+          <option value="Ammonia">Ammonia (NH3 / R717) Plant</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label>Technician Name</label>
+        <input type="text" id="technician" placeholder="Your name">
+      </div>
+      <button onclick="startChecklist()">Start Checklist</button>
+    </div>
+    <div class="card">
+      <h3>Recent Checklists</h3>
+      <div id="recent-list"></div>
+    </div>
+  </div>
+
+  <!-- CHECKLIST SCREEN -->
+  <div id="screen-checklist" class="screen hidden">
+    <div class="card">
+      <div id="checklist-header"></div>
+      <div class="progress-bar"><div class="progress-fill" id="progress" style="width:0%"></div></div>
+      <div id="progress-text" style="font-size:0.85rem; text-align:center; margin-bottom:8px;"></div>
+    </div>
+    <div id="checklist-content"></div>
+    <div class="card">
+      <label>Overall Notes / Recommendations</label>
+      <textarea id="overallNotes" class="notes" placeholder="Any additional observations, parts needed, next actions..."></textarea>
+      <button class="success" onclick="saveChecklist()">💾 Save Checklist</button>
+      <button class="secondary" onclick="printChecklist()">🖨️ Print / Export</button>
+      <button class="warning" onclick="backToSetup()">← Back</button>
+    </div>
+  </div>
+
+  <!-- HISTORY SCREEN -->
+  <div id="screen-history" class="screen hidden">
+    <div class="card">
+      <h2>Saved Checklists</h2>
+      <div id="history-list"></div>
+    </div>
+  </div>
+</div>
+
+<nav class="nav">
+  <button onclick="showScreen('setup')" class="active" id="nav-setup">New</button>
+  <button onclick="showScreen('history')" id="nav-history">History</button>
+</nav>
+
+<script>
+// ========== CHECKLIST DATA ==========
+const machines = {
+  R134A: [
+    "5# No 1", "5# No 2", "5# No 3", "5# No 4",
+    "4# No 1", "4# No 2", "4# No 3", "4# No 4", "4# No 5"
+  ],
+  Ammonia: [
+    "1# No 1", "1# No 2",
+    "5# No 1", "5# No 2"
+  ]
+};
+
+const checklists = {
+  R134A: {
+    Quarterly: [
+      { section: "Quarterly Service - R134A Fridge Plant", items: [
+        "1. Perform a complete system analysis before stopping the unit",
+        "2. Inspect and log any oil leaks on lubrication system",
+        "3. Perform gas leak detection test with soap and water",
+        "4. Repair any leaks if possible",
+        "5. Stop unit and lock out",
+        "6. Isolate Condenser and Evaporator valves",
+        "7. Drain water from vessels",
+        "8. Inspect all foundation bolts and dowel pins on motor and compressor",
+        "9. Oil samples analysis sent to WearCheck",
+        "10. Inspect compressor and gearbox oil filters",
+        "11. Loosen guard bolts and remove spacers on coupling",
+        "12. Loosen coupling bolts and inspect the condition",
+        "13. Change coupling bolts if necessary",
+        "14. Fit coupling spacer in position",
+        "15. Tighten coupling bolts",
+        "16. Fit guard and tighten bolts",
+        "17. Open all water boxes",
+        "18. Inspect valves and non-return valves not leaking through",
+        "19. Mine official together with water treatment company to inspect tubes, divider plates, water boxes and zinc anodes",
+        "20. Perform high pressure tube cleaning on condenser and evaporator tubes",
+        "21. Inspect all gaskets and replace if necessary",
+        "22. Inspect/replace zinc anodes if necessary",
+        "23. Report any abnormalities to the mine engineer",
+        "24. Close water boxes",
+        "25. Perform leak test",
+        "26. Repair any leaks",
+        "27. Commission unit",
+        "28. Perform a complete after system analysis of unit",
+        "29. Supply the before and after system analysis and complete report to the mine engineer one week after the work was done"
+      ]}
+    ],
+    Annual: [
+      { section: "Annual Service Pre-Inspection Checklist - Fridge (R134A)", items: [
+        "1. Before analysis",
+        "2. Arrange for nitrogen, oil, oil filters and inline filters",
+        "3. Arrange for thickness testing (Magnasonic) and Eddy Current testing (AITSI)",
+        "4. Check rupture disc failures",
+        "5. Change over valves leaking through",
+        "6. Corrosion on unit",
+        "7. Oil levels on compressor, motor and gearbox",
+        "8. Refrigerant levels",
+        "9. Differential pressures on water side",
+        "10. Any oil leaks and perform leak test on unit",
+        "11. Faulty or damaged pressure gauges, water and refrigerant side",
+        "12. Shaft seal leakage",
+        "13. Any missing or wrong bolts installed on water boxes, compressor and brackets",
+        "14. Faulty or damaged water valves on water box drain valves",
+        "15. Faulty or damaged water valves on water box purge valves",
+        "16. Safety valves is correct",
+        "17. Condition of purge pipes on water boxes",
+        "18. Condition of paint on unit",
+        "19. Check for the correct valves in use on unit (Refrigerant valves)",
+        "20. Check for the neatness of instrumentation pipe work",
+        "21. Inspect pump down cooler waterpipes condition",
+        "22. Inspect oil level on pump down compressor",
+        "23. Inspect for faulty or damaged instrumentation equipment",
+        "24. Report any defects on above mentioned items",
+        "25. Inspect Compressor Float"
+      ]}
+    ]
+  },
+  Ammonia: {
+    Quarterly: [
+      { section: "Quarterly Service - Ammonia Plants", items: [
+        "1. Perform a complete system analysis before stopping the unit",
+        "2. Measure and log all temperatures on unit requires while unit is running",
+        "3. Log conditioning of water differential pressure",
+        "4. Inspect and log oil levels",
+        "5. Inspect and log any oil leaks on lubrication system",
+        "6. Perform gas leak detection test with sulphur sticks",
+        "7. Repair any leaks if possible",
+        "8. Stop unit and lock out",
+        "9. Log refrigerant level whilst unit is stationary",
+        "10. Inspect all foundation bolts and or dowel pins on motor and compressor",
+        "11. Remove guards",
+        "12. Inspect couplings, element packs and coupling bolts",
+        "13. Replace coupling bolts or element packs if necessary",
+        "14. Take oil samples of oil separators",
+        "15. Inspect oil levels and top up if necessary",
+        "16. Inspect oil filter",
+        "17. Inspect and clean strainers on oil lube system",
+        "18. Inspect and clean strainers on refrigerant liquid pipe lines",
+        "19. Replace any faulty strainer if necessary",
+        "20. Inspect valves and check valves not leaking through",
+        "21. Inspect all gaskets and replace if necessary",
+        "22. Report any abnormalities to mine engineer",
+        "23. Inspect for any water leaks and repair if necessary",
+        "24. Commission unit",
+        "25. Perform a complete after system analysis of unit",
+        "26. Supply the before and after system analysis and complete report to the mine engineer one (1) week after the work was done"
+      ]}
+    ],
+    Annual: [
+      { section: "Annual Service Checklist - Ammonia Plant", items: [
+        "1. Perform pre-inspection checklist on complete unit",
+        "2. Perform before system analysis",
+        "3. Oil sample to send for analyzing. Wear check",
+        "4. Log refrigerant level after shut down",
+        "5. All personnel onsite lock out unit with mine electrician",
+        "6. All personnel onsite signing lock out register",
+        "7. Inspect oil levels in sight glasses on oil separator",
+        "8. Log refrigerant level on Receiver sight glass",
+        "9. Transfer Ammonia liquid to Receiver",
+        "10. Check oil level on pump down compressor",
+        "11. Transfer liquid and vapour refrigerant from unit to pump down unit",
+        "12. Transfer Ammonia vapour to Receiver",
+        "13. Ensure chill water pump is running and enough water flow through evaporator before transfer of refrigerant is commenced",
+        "14. Stop chill water pump after completion of transferring",
+        "15. Drain water from evaporator",
+        "16. Open Surge drum and Receiver end covers for inspection",
+        "17. Loosen safety valves and remove for re-certify",
+        "18. Inspect condition of change over valves",
+        "19. Fit blank flanges for pressure testing",
+        "20. Split compressor coupling and inspect bolts, disc, packs and couplings",
+        "21. Ensure that coupling bolts are moving freely through coupling holes",
+        "22. If coupling bolts is sticky, dress coupling holes from any burrs",
+        "23. Inspect compressors float and note",
+        "24. Inspect compressor oil filter and oil condition",
+        "25. Change oil filter",
+        "26. Switch off heaters on oil separators",
+        "27. Drain oil from oil separators into 210L drums",
+        "28. Change coalescent oil filters",
+        "29. Inspect gasket condition of oil separator cover",
+        "30. Inspect studs condition of oil separator cover",
+        "31. Clean all liquid and oil strainers",
+        "32. Inspect laser alignment on motors and compressors",
+        "33. Remove condenser and evaporator water inlet pipes for inside inspection",
+        "34. Inspect heat plate exchangers inside and remove any visible dirt",
+        "35. Report any defects on above mentioned items",
+        "36. Pressure test unit with Nitrogen for at least 12 hours, ensure the correct pressure is used",
+        "37. Ensure mine personnel is present for witnessing of pressure test",
+        "38. Blow Nitrogen off in a safe manner",
+        "39. Test vacuum pump with vacuum gauge before pump is connected to unit",
+        "40. Connect vacuum pump – inspect oil level and motor direction on pump",
+        "41. Perform evacuation process",
+        "42. Test evacuation for at least 12 hours – Less than 5 mmhg",
+        "43. Ensure mine Personnel is present for witnessing of vacuum",
+        "44. Connect drive couplings",
+        "45. Charge unit to positive pressure (300kPa) with refrigerant vapour",
+        "46. Remove blank flanges one by one on change over valves or safety valves",
+        "47. Inspect safety valve gaskets and fit safety valves",
+        "48. Open water valves and Inspect for any water leaks or loose bolts",
+        "49. Ensure all relevant valves are open when charging unit from Receiver",
+        "50. Report any defects on above mentioned items",
+        "51. Ensure all relevant valves are open before commissioning",
+        "52. Commission unit"
+      ]}
+    ]
+  }
+};
+
+// ========== STATE ==========
+let currentChecklist = null;
+let currentItems = [];
+
+// ========== INIT ==========
+document.addEventListener('DOMContentLoaded', () => {
+  document.getElementById('serviceDate').valueAsDate = new Date();
+  updateMachines();
+  loadRecent();
+  if ('serviceWorker' in navigator) {
+    navigator.serviceWorker.register('sw.js').catch(() => {});
+  }
+});
+
+function updateMachines() {
+  const refrig = document.getElementById('refrigerant').value;
+  const select = document.getElementById('machineNo');
+  select.innerHTML = '<option value="">-- Select Machine --</option>';
+  (machines[refrig] || []).forEach(m => {
+    const opt = document.createElement('option');
+    opt.value = m;
+    opt.textContent = m;
+    select.appendChild(opt);
+  });
+}
+
+function startChecklist() {
+  const machine = document.getElementById('machineNo').value;
+  const date = document.getElementById('serviceDate').value;
+  const service = document.getElementById('serviceType').value;
+  const refrig = document.getElementById('refrigerant').value;
+  const tech = document.getElementById('technician').value.trim();
+
+  if (!machine) { alert('Please select a machine number'); return; }
+  if (!date) { alert('Please select a date'); return; }
+
+  currentChecklist = {
+    id: Date.now().toString(),
+    machine, date, service, refrigerant: refrig, technician: tech,
+    created: new Date().toISOString(),
+    items: [],
+    overallNotes: '',
+    completed: false
+  };
+
+  const template = checklists[refrig][service];
+  currentItems = [];
+  let id = 0;
+  template.forEach(sec => {
+    sec.items.forEach(text => {
+      currentItems.push({
+        id: id++,
+        section: sec.section,
+        text,
+        checked: false,
+        status: '', // pass, fail, na
+        notes: ''
+      });
+    });
+  });
+
+  renderChecklist();
+  showScreen('checklist');
+}
+
+function renderChecklist() {
+  const header = document.getElementById('checklist-header');
+  header.innerHTML = `
+    <strong>${currentChecklist.machine}</strong> — ${currentChecklist.refrigerant} ${currentChecklist.service}<br>
+    <small>Date: ${currentChecklist.date} | Tech: ${currentChecklist.technician || '—'}</small>
+  `;
+
+  const content = document.getElementById('checklist-content');
+  let html = '';
+  let lastSection = '';
+  currentItems.forEach(item => {
+    if (item.section !== lastSection) {
+      if (lastSection) html += '</div>';
+      html += `<div class="checklist-section"><div class="section-title">${item.section}</div>`;
+      lastSection = item.section;
+    }
+    html += `
+      <div class="item" data-id="${item.id}">
+        <div class="item-header">
+          <input type="checkbox" ${item.checked ? 'checked' : ''} onchange="toggleItem(${item.id}, this.checked)">
+          <div class="item-text">${item.text}</div>
+        </div>
+        <div class="status-btns">
+          <button type="button" class="status-btn ${item.status==='pass'?'active pass':''}" onclick="setStatus(${item.id}, 'pass')">Pass</button>
+          <button type="button" class="status-btn ${item.status==='fail'?'active fail':''}" onclick="setStatus(${item.id}, 'fail')">Fail / Issue</button>
+          <button type="button" class="status-btn ${item.status==='na'?'active na':''}" onclick="setStatus(${item.id}, 'na')">N/A</button>
+        </div>
+        <textarea class="notes" placeholder="Notes..." oninput="setNotes(${item.id}, this.value)">${item.notes}</textarea>
+      </div>
+    `;
+  });
+  html += '</div>';
+  content.innerHTML = html;
+  document.getElementById('overallNotes').value = currentChecklist.overallNotes || '';
+  updateProgress();
+}
+
+function toggleItem(id, checked) {
+  const item = currentItems.find(i => i.id === id);
+  if (item) item.checked = checked;
+  updateProgress();
+}
+
+function setStatus(id, status) {
+  const item = currentItems.find(i => i.id === id);
+  if (item) {
+    item.status = item.status === status ? '' : status;
+    if (item.status) item.checked = true;
+  }
+  renderChecklist(); // re-render to update buttons
+}
+
+function setNotes(id, notes) {
+  const item = currentItems.find(i => i.id === id);
+  if (item) item.notes = notes;
+}
+
+function updateProgress() {
+  const total = currentItems.length;
+  const done = currentItems.filter(i => i.checked || i.status).length;
+  const pct = total ? Math.round((done / total) * 100) : 0;
+  document.getElementById('progress').style.width = pct + '%';
+  document.getElementById('progress-text').textContent = `${done} / ${total} items addressed (${pct}%)`;
+}
+
+function saveChecklist() {
+  currentChecklist.items = currentItems;
+  currentChecklist.overallNotes = document.getElementById('overallNotes').value;
+  currentChecklist.completed = currentItems.every(i => i.checked || i.status);
+
+  let history = JSON.parse(localStorage.getItem('checklists') || '[]');
+  const idx = history.findIndex(c => c.id === currentChecklist.id);
+  if (idx >= 0) history[idx] = currentChecklist;
+  else history.unshift(currentChecklist);
+  localStorage.setItem('checklists', JSON.stringify(history));
+
+  // Send email
+  sendEmail(currentChecklist);
+
+  alert('Checklist saved and email sent to gary@millionairservices.co.za');
+  loadRecent();
+}
+
+function sendEmail(checklist) {
+  const publicKey = 'XixPCB9Rb18OhKFhY';
+  const serviceId = 'service_1e1qnok';
+  const templateId = 'template_m98x8eh';
+
+  emailjs.init(publicKey);
+
+  let body = `Refrigeration Plant Checklist Report\n\n`;
+  body += `Machine: ${checklist.machine}\n`;
+  body += `Date: ${checklist.date}\n`;
+  body += `Service: ${checklist.service}\n`;
+  body += `Refrigerant: ${checklist.refrigerant}\n`;
+  body += `Technician: ${checklist.technician || 'N/A'}\n\n`;
+  body += `=== CHECKLIST ===\n`;
+
+  checklist.items.forEach(item => {
+    const status = item.status ? item.status.toUpperCase() : (item.checked ? 'DONE' : 'PENDING');
+    body += `${item.text}\n  Status: ${status}\n`;
+    if (item.notes) body += `  Notes: ${item.notes}\n`;
+    body += `\n`;
+  });
+
+  body += `=== OVERALL NOTES ===\n${checklist.overallNotes || 'None'}\n`;
+
+  const templateParams = {
+    to_email: 'gary@millionairservices.co.za',
+    subject: `Checklist: ${checklist.machine} - ${checklist.refrigerant} ${checklist.service} - ${checklist.date}`,
+    message: body
+  };
+
+  emailjs.send(serviceId, templateId, templateParams)
+    .then(() => console.log('Email sent'))
+    .catch(err => {
+      console.error('Email failed', err);
+      alert('Checklist saved, but email failed to send. Check internet connection.');
+    });
+}
+
+function printChecklist() {
+  window.print();
+}
+
+function backToSetup() {
+  if (confirm('Leave without saving? Unsaved changes will be lost.')) {
+    showScreen('setup');
+  }
+}
+
+function loadRecent() {
+  const history = JSON.parse(localStorage.getItem('checklists') || '[]').slice(0, 5);
+  const el = document.getElementById('recent-list');
+  if (!history.length) {
+    el.innerHTML = '<p style="color:#666; font-size:0.9rem;">No saved checklists yet.</p>';
+    return;
+  }
+  el.innerHTML = history.map(c => `
+    <div class="history-item" onclick="loadChecklist('${c.id}')">
+      <strong>${c.machine}</strong> — ${c.refrigerant} ${c.service}<br>
+      <small>${c.date} ${c.completed ? '✅' : '⏳'}</small>
+    </div>
+  `).join('');
+}
+
+function loadChecklist(id) {
+  const history = JSON.parse(localStorage.getItem('checklists') || '[]');
+  const found = history.find(c => c.id === id);
+  if (!found) return;
+  currentChecklist = found;
+  currentItems = found.items || [];
+  renderChecklist();
+  showScreen('checklist');
+}
+
+function showScreen(name) {
+  document.querySelectorAll('.screen').forEach(s => s.classList.add('hidden'));
+  document.getElementById('screen-' + name).classList.remove('hidden');
+  document.querySelectorAll('.nav button').forEach(b => b.classList.remove('active'));
+  document.getElementById('nav-' + name).classList.add('active');
+  if (name === 'history') renderHistory();
+  if (name === 'setup') loadRecent();
+}
+
+function renderHistory() {
+  const history = JSON.parse(localStorage.getItem('checklists') || '[]');
+  const el = document.getElementById('history-list');
+  if (!history.length) {
+    el.innerHTML = '<p>No checklists saved.</p>';
+    return;
+  }
+  el.innerHTML = history.map(c => `
+    <div class="history-item" onclick="loadChecklist('${c.id}')">
+      <strong>${c.machine}</strong> (${c.refrigerant} ${c.service})<br>
+      <small>${c.date} — ${c.technician || 'No tech'} ${c.completed ? '✅ Complete' : '⏳ In progress'}</small>
+    </div>
+  `).join('');
+}
+</script>
+</body>
+</html>
